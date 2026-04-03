@@ -1,0 +1,86 @@
+MATCH (start:ACLineSegment {mrid: $startMrid})
+WHERE start.version = '1.0'
+
+CALL apoc.path.spanningTree(start, {
+  relationshipFilter: "CONNECTED_TO>|<CONNECTED_TO",
+  bfs: true,
+  uniqueness: "NODE_GLOBAL",
+  filterStartNode: true
+}) YIELD path
+
+WITH collect({
+  ns: nodes(path),
+  node: last(nodes(path)),
+  hopDepth: length(path)
+}) AS rows
+
+// Build unique (parent, prev) pairs only once
+UNWIND rows AS row
+UNWIND range(0, size(row.ns) - 2) AS i
+WITH rows,
+     elementId(row.ns[i]) AS parentId,
+     CASE WHEN i = 0 THEN '' ELSE elementId(row.ns[i - 1]) END AS prevId,
+     row.ns[i] AS parent,
+     CASE WHEN i = 0 THEN null ELSE row.ns[i - 1] END AS prev
+WITH rows,
+     collect(DISTINCT {
+       key: parentId + '|' + prevId,
+       parent: parent,
+       prev: prev
+     }) AS pairs
+
+// Compute siblings once per unique pair
+UNWIND pairs AS pair
+CALL (pair) {
+  MATCH (pair.parent)-[:CONNECTED_TO]-(s)
+  WHERE pair.prev IS NULL OR elementId(s) <> elementId(pair.prev)
+  WITH s
+  ORDER BY s.mrid
+  RETURN [x IN collect(s) | elementId(x)] AS childIds, pair.key AS key
+}
+
+WITH rows, collect([key, childIds]) AS kvs
+WITH rows, apoc.map.fromPairs(kvs) AS siblingMap
+
+// Build levels using the cached sibling map
+UNWIND rows AS row
+WITH row, siblingMap
+WHERE row.node IS NOT NULL AND size(row.ns) > 1
+
+WITH row, siblingMap,
+     reduce(parts = [], i IN range(0, size(row.ns) - 2) |
+       parts +
+       CASE
+         WHEN size(
+           siblingMap[
+             elementId(row.ns[i]) + '|' +
+             CASE WHEN i = 0 THEN '' ELSE elementId(row.ns[i - 1]) END
+           ]
+         ) > 1
+         THEN [
+           apoc.coll.indexOf(
+             siblingMap[
+               elementId(row.ns[i]) + '|' +
+               CASE WHEN i = 0 THEN '' ELSE elementId(row.ns[i - 1]) END
+             ],
+             elementId(row.ns[i + 1])
+           ) + 1
+         ]
+         ELSE []
+       END
+     ) AS parts,
+     row.node AS node,
+     row.hopDepth AS hopDepth
+
+WHERE size(parts) <= 4
+
+RETURN
+  head(labels(node)) AS label,
+  node.mrid AS mrid,
+  node.name AS name,
+  CASE
+    WHEN size(parts) = 0 THEN ''
+    ELSE reduce(s = toString(parts[0]), x IN tail(parts) | s + '.' + toString(x))
+  END AS level,
+  hopDepth
+ORDER BY parts, mrid;
