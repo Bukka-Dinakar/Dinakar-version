@@ -1,0 +1,63 @@
+private static void convert(double xFt, double yFt) {
+
+    double ftToMeter = 1200.0 / 3937.0;
+
+    double a = 6378137.0;
+    double invF = 298.257222101;
+    double f = 1.0 / invF;
+    double e = Math.sqrt(2 * f - f * f);
+
+    double lat1 = Math.toRadians(36.16666666666666);
+    double lat2 = Math.toRadians(34.33333333333334);
+    double lat0 = Math.toRadians(33.75);
+    double lon0 = Math.toRadians(-79.0);
+
+    double falseEasting = 2000000.0 * ftToMeter;
+    double falseNorthing = 0.0;
+
+    double x = xFt * ftToMeter;
+    double y = yFt * ftToMeter;
+
+    double m1 = m(lat1, e);
+    double m2 = m(lat2, e);
+    double t1 = t(lat1, e);
+    double t2 = t(lat2, e);
+    double t0 = t(lat0, e);
+
+    double n = (Math.log(m1) - Math.log(m2)) / (Math.log(t1) - Math.log(t2));
+    double F = m1 / (n * Math.pow(t1, n));
+    double rho0 = a * F * Math.pow(t0, n);
+
+    double dx = x - falseEasting;
+    double dy = y - falseNorthing;
+
+    double rho = Math.sqrt(dx * dx + Math.pow(rho0 - dy, 2));
+    double theta = Math.atan2(dx, rho0 - dy);
+
+    double tVal = Math.pow(rho / (a * F), 1.0 / n);
+
+    double lat = Math.PI / 2 - 2 * Math.atan(tVal);
+
+    for (int i = 0; i < 10; i++) {
+        lat = Math.PI / 2 - 2 * Math.atan(
+                tVal * Math.pow(
+                        (1 - e * Math.sin(lat)) / (1 + e * Math.sin(lat)),
+                        e / 2
+                )
+        );
+    }
+
+    double lon = lon0 + theta / n;
+
+    System.out.println("Lat = " + Math.toDegrees(lat));
+    System.out.println("Lon = " + Math.toDegrees(lon));
+}
+
+private static double m(double lat, double e) {
+    return Math.cos(lat) / Math.sqrt(1 - e * e * Math.sin(lat) * Math.sin(lat));
+}
+
+private static double t(double lat, double e) {
+    return Math.tan(Math.PI / 4 - lat / 2) /
+            Math.pow((1 - e * Math.sin(lat)) / (1 + e * Math.sin(lat)), e / 2);
+}
