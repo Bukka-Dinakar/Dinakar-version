@@ -1,0 +1,50 @@
+Maven Dependencies
+GeoTools BOM (Recommended)
+<properties>
+    <geotools.version>32.0</geotools.version>
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-bom</artifactId>
+            <version>${geotools.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+Required Dependencies
+<dependencies>
+
+    <!-- CRS and transformation support -->
+    <dependency>
+        <groupId>org.geotools</groupId>
+        <artifactId>gt-referencing</artifactId>
+    </dependency>
+
+    <!-- EPSG database -->
+    <dependency>
+        <groupId>org.geotools</groupId>
+        <artifactId>gt-epsg-hsql</artifactId>
+    </dependency>
+
+</dependencies>
+Repository
+
+GeoTools artifacts are not always available in Maven Central, so add:
+
+<repositories>
+    <repository>
+        <id>osgeo</id>
+        <name>OSGeo Release Repository</name>
+        <url>https://repo.osgeo.org/repository/release/</url>
+    </repository>
+</repositories>
+Imports for Your Example
+import org.geotools.referencing.CRS;
+import org.locationtech.jts.geom.Coordinate;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.geotools.geometry.DirectPosition2D;
