@@ -1,0 +1,155 @@
+package com.company.outagereport.service;
+
+import com.company.outagereport.dto.StatusReportDto;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Slf4j
+@Component
+public class HtmlReportBuilder {
+
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
+
+    public String buildReport(
+            Instant startTime,
+            Instant endTime,
+            List<StatusReportDto> reports) {
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <style>
+
+                body{
+                    font-family:Arial,sans-serif;
+                    font-size:14px;
+                }
+
+                table{
+                    border-collapse:collapse;
+                    width:100%;
+                }
+
+                th{
+                    background:#0B6EFD;
+                    color:white;
+                    padding:10px;
+                    border:1px solid #ddd;
+                }
+
+                td{
+                    border:1px solid #ddd;
+                    padding:8px;
+                    text-align:center;
+                }
+
+                tr:nth-child(even){
+                    background:#f5f5f5;
+                }
+
+                h2{
+                    color:#0B6EFD;
+                }
+
+                </style>
+                </head>
+                <body>
+                """);
+
+        html.append("<h2>Outage Report</h2>");
+
+        html.append("<p>");
+        html.append("<b>Report Duration :</b><br>");
+        html.append(FORMATTER.format(startTime));
+        html.append(" &nbsp; To &nbsp; ");
+        html.append(FORMATTER.format(endTime));
+        html.append("</p>");
+
+        html.append("<p>");
+        html.append("<b>Generated At :</b> ");
+        html.append(FORMATTER.format(Instant.now()));
+        html.append("</p>");
+
+        html.append("<table>");
+
+        html.append("""
+                <tr>
+                    <th>Status</th>
+                    <th>Count</th>
+                    <th>Min (ms)</th>
+                    <th>Max (ms)</th>
+                    <th>Average (ms)</th>
+                    <th>Median (ms)</th>
+                </tr>
+                """);
+
+        long total = 0;
+
+        for (StatusReportDto dto : reports) {
+
+            total += dto.getCount();
+
+            html.append("<tr>");
+
+            html.append("<td>")
+                    .append(dto.getStatus())
+                    .append("</td>");
+
+            html.append("<td>")
+                    .append(dto.getCount())
+                    .append("</td>");
+
+            html.append("<td>")
+                    .append(dto.getMinDuration())
+                    .append("</td>");
+
+            html.append("<td>")
+                    .append(dto.getMaxDuration())
+                    .append("</td>");
+
+            html.append("<td>")
+                    .append(String.format("%.2f",
+                            dto.getAverageDuration()))
+                    .append("</td>");
+
+            html.append("<td>")
+                    .append(dto.getMedianDuration())
+                    .append("</td>");
+
+            html.append("</tr>");
+
+        }
+
+        html.append("</table>");
+
+        html.append("<br>");
+
+        html.append("<b>Total Records : </b>")
+                .append(total);
+
+        html.append("""
+
+                <br><br>
+
+                Regards,<br>
+                Outage Reporting Service
+
+                </body>
+                </html>
+                """);
+
+        return html.toString();
+
+    }
+
+}
