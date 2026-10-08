@@ -1,0 +1,102 @@
+
+[
+  {
+    $setWindowFields: {
+      partitionBy: "$PROCESS_ID",
+      output: {
+        invalidCount: {
+          $sum: {
+            $cond: [
+              { $eq: ["$OUTCOME", "INVALID"] },
+              1,
+              0
+            ]
+          },
+          window: {
+            documents: ["unbounded", "unbounded"]
+          }
+        },
+        failedCount: {
+          $sum: {
+            $cond: [
+              { $eq: ["$OUTCOME", "FAILED"] },
+              1,
+              0
+            ]
+          },
+          window: {
+            documents: ["unbounded", "unbounded"]
+          }
+        },
+        questionableCount: {
+          $sum: {
+            $cond: [
+              { $eq: ["$OUTCOME", "QUESTIONABLE"] },
+              1,
+              0
+            ]
+          },
+          window: {
+            documents: ["unbounded", "unbounded"]
+          }
+        },
+        successCount: {
+          $sum: {
+            $cond: [
+              { $eq: ["$OUTCOME", "SUCCESS"] },
+              1,
+              0
+            ]
+          },
+          window: {
+            documents: ["unbounded", "unbounded"]
+          }
+        },
+        totalCount: {
+          $sum: 1,
+          window: {
+            documents: ["unbounded", "unbounded"]
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      COMPOSITE_OUTCOME: {
+        $switch: {
+          branches: [
+            {
+              case: { $gt: ["$invalidCount", 0] },
+              then: "INVALID"
+            },
+            {
+              case: { $gt: ["$failedCount", 0] },
+              then: "FAILED"
+            },
+            {
+              case: { $gt: ["$questionableCount", 0] },
+              then: "QUESTIONABLE"
+            },
+            {
+              case: {
+                $eq: ["$successCount", "$totalCount"]
+              },
+              then: "SUCCESS"
+            }
+          ],
+          default: "INVALID"
+        }
+      }
+    }
+  },
+  {
+    $unset: [
+      "invalidCount",
+      "failedCount",
+      "questionableCount",
+      "successCount",
+      "totalCount"
+    ]
+  }
+]
