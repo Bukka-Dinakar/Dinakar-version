@@ -1,0 +1,167 @@
+
+db.outagecard_status_info.aggregate([
+  {
+    $addFields: {
+      _hasTigo: {
+        $ne: [{ $ifNull: ["$TIGO_ORT_ID", null] }, null]
+      },
+      _hasMrid: {
+        $ne: [{ $ifNull: ["$MRID", null] }, null]
+      }
+    }
+  },
+  {
+    $addFields: {
+      _result: {
+        $switch: {
+          branches: [
+            {
+              case: { $eq: ["$_hasMrid", false] },
+              then: {
+                outcome: "QUESTIONABLE",
+                reason: "TIGO linked but not modelled"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  "$_hasTigo",
+                  { $eq: ["$IS_CONNECTED", false] }
+                ]
+              },
+              then: {
+                outcome: "QUESTIONABLE",
+                reason: "TIGO linked but no connectivity"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  "$_hasTigo",
+                  { $eq: ["$PRE-VERIFICATION", false] },
+                  { $eq: ["$DURING-VERIFICATION", true] }
+                ]
+              },
+              then: {
+                outcome: "SUCCESS",
+                reason: "TIGO linked and isolated"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  "$_hasTigo",
+                  { $eq: ["$PRE-VERIFICATION", true] },
+                  { $eq: ["$DURING-VERIFICATION", false] }
+                ]
+              },
+              then: {
+                outcome: "FAILED",
+                reason: "TIGO linked but no longer isolated"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  "$_hasTigo",
+                  { $eq: ["$PRE-VERIFICATION", false] },
+                  { $eq: ["$DURING-VERIFICATION", false] }
+                ]
+              },
+              then: {
+                outcome: "FAILED",
+                reason: "TIGO linked but remains energized"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  "$_hasTigo",
+                  { $eq: ["$PRE-VERIFICATION", true] },
+                  { $eq: ["$DURING-VERIFICATION", true] }
+                ]
+              },
+              then: {
+                outcome: "QUESTIONABLE",
+                reason: "TIGO linked but already isolated"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  { $eq: ["$_hasTigo", false] },
+                  "$_hasMrid",
+                  { $eq: ["$PRE-VERIFICATION", false] },
+                  { $eq: ["$DURING-VERIFICATION", false] }
+                ]
+              },
+              then: {
+                outcome: "SUCCESS",
+                reason: "No linked TIGO and remains energized"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  { $eq: ["$_hasTigo", false] },
+                  "$_hasMrid",
+                  { $eq: ["$PRE-VERIFICATION", true] },
+                  { $eq: ["$DURING-VERIFICATION", true] }
+                ]
+              },
+              then: {
+                outcome: "SUCCESS",
+                reason: "No linked TIGO and remains isolated"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  { $eq: ["$_hasTigo", false] },
+                  "$_hasMrid",
+                  { $eq: ["$PRE-VERIFICATION", false] },
+                  { $eq: ["$DURING-VERIFICATION", true] }
+                ]
+              },
+              then: {
+                outcome: "FAILED",
+                reason: "No linked TIGO and is isolated"
+              }
+            },
+            {
+              case: {
+                $and: [
+                  { $eq: ["$_hasTigo", false] },
+                  "$_hasMrid",
+                  { $eq: ["$PRE-VERIFICATION", true] },
+                  { $eq: ["$DURING-VERIFICATION", false] }
+                ]
+              },
+              then: {
+                outcome: "FAILED",
+                reason: "No linked TIGO and is energized"
+              }
+            }
+          ],
+          default: {
+            outcome: "INVALID",
+            reason: "TIGO ORT ID unknown"
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      OUTCOME: "$_result.outcome",
+      REASON: "$_result.reason"
+    }
+  },
+  {
+    $project: {
+      _hasTigo: 0,
+      _hasMrid: 0,
+      _result: 0
+    }
+  }
+]);
