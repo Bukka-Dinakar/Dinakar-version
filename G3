@@ -1,0 +1,44 @@
+460170
+
+1. Description
+Enhance the TIGO outage verification process to calculate and populate OUTCOME and REASON attributes for each generator within the Generators structure.
+The OUTCOME and REASON values will be determined based on the generator's TIGO ORT ID, MRID, connectivity status, local status, and PRE/DURING verification results, according to the defined business rules.
+2. Change Description
+Enhanced the TIGO verification process to include generator-level OUTCOME and REASON information.
+3. Change Details
+Implemented logic to evaluate each generator's TIGO linkage, connectivity, and PRE/DURING verification results to determine the appropriate OUTCOME and REASON.
+The enhancement classifies generators into SUCCESS, FAILED, QUESTIONABLE, or INVALID outcomes and assigns the corresponding reason based on the defined business rules.
+The calculated OUTCOME and REASON attributes are added to each generator within the Generators structure as part of the TIGO verification processing.
+
+
+__________________
+
+460171
+
+1. Description
+Enhance the Outage Verification process by introducing a new tigoStatus attribute at the main Outage Verification record level.
+The tigoStatus attribute will represent the composite outcome of all individual generator verification results.
+The composite status will be calculated based on the following priority order:
+INVALID: If at least one generator has an INVALID outcome.
+FAILED: If at least one generator has a FAILED outcome and none are INVALID.
+QUESTIONABLE: If at least one generator has a QUESTIONABLE outcome and none are INVALID or FAILED.
+SUCCESS: If all generators have a SUCCESS outcome.
+INVALID: Default status if none of the above conditions are satisfied.
+2. Change Description
+Added a new tigoStatus attribute to the Outage Verification record to represent the composite outcome of individual generator verification results.
+3. Change Details
+Implemented composite status calculation logic to evaluate all generator-level OUTCOME values and determine the overall tigoStatus based on the defined priority order: INVALID, FAILED, QUESTIONABLE, and SUCCESS.
+The calculated tigoStatus is populated at the main Outage Verification record level, providing a consolidated representation of the generator verification results.
+
+__________________
+
+460459
+1. Description
+The Outage Verification process is currently unable to remove the OPEN tag from switch equipment when its status changes to CLOSED.
+This results in an incorrect representation of the switch's operational status within the topology network, potentially affecting connectivity tracing and outage verification results.
+The logic needs to be corrected to ensure that the OPEN tag is removed when the switch status is CLOSED.
+2. Change Description
+Fixed an issue in the Outage Verification process where the OPEN tag was not removed when the switch status changed to CLOSED.
+3. Change Details
+Modified the Outage Verification logic to correctly update switch equipment tags based on their operational status.
+When a switch is identified as CLOSED, the existing OPEN tag is removed to ensure accurate topology representation and connectivity tracing during outage verification
