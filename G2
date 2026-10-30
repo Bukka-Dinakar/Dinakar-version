@@ -1,0 +1,125 @@
+public class GeneratorOutcomeUtil {
+
+    public static void calculateOutcome(Generator generator) {
+
+        boolean hasOrtId = hasValue(generator.getOrtID());
+        boolean hasMrid = hasValue(generator.getMrid());
+
+        Boolean connected = generator.getIsConnected();
+        Boolean local = generator.getIsLocal();
+
+        Boolean pre = generator.getIsolatedPre();
+        Boolean during = generator.getIsolatedDuring();
+
+        // CASE 1: TIGO ORT ID unknown
+        if (!hasOrtId && !hasMrid) {
+
+            setResult(generator,
+                    "INVALID",
+                    "TIGO ORT ID unknown");
+            return;
+        }
+
+        // CASE 2: TIGO linked but not modelled
+        if (hasOrtId && !hasMrid) {
+
+            setResult(generator,
+                    "QUESTIONABLE",
+                    "TIGO linked but not modelled");
+            return;
+        }
+
+        // CASE 3: TIGO linked but no connectivity
+        if (hasOrtId && Boolean.FALSE.equals(connected)) {
+
+            setResult(generator,
+                    "QUESTIONABLE",
+                    "TIGO linked but no connectivity");
+            return;
+        }
+
+        // Remaining rules require connectivity, locality
+        // and both verification values.
+        if (!Boolean.TRUE.equals(connected)
+                || !Boolean.TRUE.equals(local)
+                || pre == null
+                || during == null) {
+
+            setResult(generator,
+                    "QUESTIONABLE",
+                    "Insufficient generator verification data");
+            return;
+        }
+
+        // CASE 4: TIGO ORT ID exists
+        if (hasOrtId) {
+
+            if (!pre && during) {
+
+                setResult(generator,
+                        "SUCCESS",
+                        "TIGO linked and isolated");
+
+            } else if (pre && !during) {
+
+                setResult(generator,
+                        "FAILED",
+                        "TIGO linked but no longer isolated");
+
+            } else if (!pre && !during) {
+
+                setResult(generator,
+                        "FAILED",
+                        "TIGO linked but remains energized");
+
+            } else {
+
+                setResult(generator,
+                        "QUESTIONABLE",
+                        "TIGO linked but already isolated");
+            }
+
+            return;
+        }
+
+        // CASE 5: No linked TIGO ORT ID
+
+        if (!pre && !during) {
+
+            setResult(generator,
+                    "SUCCESS",
+                    "No linked TIGO and remains energized");
+
+        } else if (pre && during) {
+
+            setResult(generator,
+                    "SUCCESS",
+                    "No linked TIGO and remains isolated");
+
+        } else if (!pre && during) {
+
+            setResult(generator,
+                    "FAILED",
+                    "No linked TIGO and is isolated");
+
+        } else {
+
+            setResult(generator,
+                    "FAILED",
+                    "No linked TIGO and is energized");
+        }
+    }
+
+    private static boolean hasValue(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static void setResult(
+            Generator generator,
+            String outcome,
+            String reason) {
+
+        generator.setOutcome(outcome);
+        generator.setReason(reason);
+    }
+}
