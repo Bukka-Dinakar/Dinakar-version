@@ -1,0 +1,252 @@
+private void appendStatusSummary(
+        StringBuilder html,
+        List<OutageReportStatus> tigoFalseReports,
+        List<OutageReportStatus> tigoTrueReports) {
+
+    html.append("<table style='width:100%; border-collapse:collapse;'>");
+    html.append("<tr>");
+
+    // Status summary table
+    html.append("<td style='width:70%; vertical-align:top;'>");
+
+    html.append("<table style='width:100%; border-collapse:collapse;'>");
+
+    // First header row
+    html.append("<tr>");
+
+    html.append("<th rowspan='2' "
+            + "style='background:#0070C0;color:white;'>"
+            + "Status</th>");
+
+    html.append("<th colspan='5' "
+            + "style='background:#C00000;color:white;'>"
+            + "TIGO Analyzed = FALSE</th>");
+
+    html.append("<th colspan='5' "
+            + "style='background:#00B050;color:white;'>"
+            + "TIGO Analyzed = TRUE</th>");
+
+    html.append("</tr>");
+
+    // Second header row
+    html.append("<tr>");
+
+    for (int i = 0; i < 2; i++) {
+
+        html.append("<th>Count</th>");
+        html.append("<th>Min (ms)</th>");
+        html.append("<th>Max (ms)</th>");
+        html.append("<th>Mean (ms)</th>");
+        html.append("<th>Median (ms)</th>");
+    }
+
+    html.append("</tr>");
+
+    List<String> statusList = Arrays.asList(
+            "SUCCESS",
+            "FAILED",
+            "QUESTIONABLE",
+            "INVALID",
+            "QUEUED",
+            "PENDING"
+    );
+
+    long total = 0;
+    int statusRow = 0;
+
+    for (String statusReport : statusList) {
+
+        String statusColour = getStatusColour(statusReport);
+        String background = getBackground(statusRow);
+
+        html.append("<tr style='background:")
+                .append(background)
+                .append(";'>");
+
+        // Status column
+        html.append("<td style='text-align:left;"
+                + "font-weight:bold;color:")
+                .append(statusColour)
+                .append(";'>")
+                .append(statusReport)
+                .append("</td>");
+
+        // TIGO Analyzed = FALSE
+        OutageReportStatus falseReport = tigoFalseReports.stream()
+                .filter(x -> statusReport.equalsIgnoreCase(x.getStatus()))
+                .findFirst()
+                .orElse(null);
+
+        if (falseReport != null) {
+            total += falseReport.getCount();
+        }
+
+        appendStatusColumns(html, falseReport);
+
+        // TIGO Analyzed = TRUE
+        OutageReportStatus trueReport = tigoTrueReports.stream()
+                .filter(x -> statusReport.equalsIgnoreCase(x.getStatus()))
+                .findFirst()
+                .orElse(null);
+
+        if (trueReport != null) {
+            total += trueReport.getCount();
+        }
+
+        appendStatusColumns(html, trueReport);
+
+        html.append("</tr>");
+
+        statusRow++;
+    }
+
+    html.append("</table>");
+    html.append("</td>");
+
+    // Pie chart
+    html.append("<td style='width:30%;text-align:center;"
+            + "vertical-align:top;'>");
+
+    html.append("<img src='cid:statusPieChart' "
+            + "width='320' height='220'/>");
+
+    html.append("</td>");
+
+    html.append("</tr>");
+    html.append("</table>");
+
+    // Total records
+    html.append("<br>");
+
+    html.append("<div style='font-size:18px;'>")
+            .append("<b>Total Records : </b>")
+            .append("<span style='font-weight:bold;"
+                    + "font-size:18px;color:#0056b3;'>")
+            .append(total)
+            .append("</span>")
+            .append("</div>");
+
+    html.append("<br><br>");
+}
+
+
+________________
+
+
+private void appendStatusColumns(
+        StringBuilder html,
+        OutageReportStatus outageReportStatus) {
+
+    if (outageReportStatus == null) {
+
+        html.append("<td style='text-align:right;'>0</td>");
+
+        for (int i = 0; i < 4; i++) {
+            html.append("<td style='text-align:right;'>-</td>");
+        }
+
+        return;
+    }
+
+    // Count
+    html.append("<td style='text-align:right;'>")
+            .append(outageReportStatus.getCount())
+            .append("</td>");
+
+    // Minimum duration
+    if (outageReportStatus.getMinDuration() != null) {
+
+        html.append("<td style='text-align:right;'>")
+                .append(outageReportStatus.getMinDuration())
+                .append("</td>");
+
+    } else {
+
+        html.append("<td style='text-align:right;'>-</td>");
+    }
+
+    // Maximum duration
+    if (outageReportStatus.getMaxDuration() != null) {
+
+        html.append("<td style='text-align:right;'>")
+                .append(outageReportStatus.getMaxDuration())
+                .append("</td>");
+
+    } else {
+
+        html.append("<td style='text-align:right;'>-</td>");
+    }
+
+    // Mean duration
+    if (outageReportStatus.getAverageDuration() != null) {
+
+        html.append("<td style='text-align:right;'>")
+                .append(String.format(
+                        "%.2f",
+                        outageReportStatus.getAverageDuration()))
+                .append("</td>");
+
+    } else {
+
+        html.append("<td style='text-align:right;'>-</td>");
+    }
+
+    // Median duration
+    if (outageReportStatus.getMedianDuration() != null) {
+
+        html.append("<td style='text-align:right;'>")
+                .append(String.format(
+                        "%.2f",
+                        outageReportStatus.getMedianDuration()))
+                .append("</td>");
+
+    } else {
+
+        html.append("<td style='text-align:right;'>-</td>");
+    }
+}
+
+_______________
+
+private List<OutageReportStatus> combineStatusReports(
+        List<OutageReportStatus> tigoFalseReports,
+        List<OutageReportStatus> tigoTrueReports) {
+
+    List<OutageReportStatus> combinedReports = new ArrayList<>();
+
+    List<String> statusList = Arrays.asList(
+            "SUCCESS",
+            "FAILED",
+            "QUESTIONABLE",
+            "INVALID",
+            "QUEUED",
+            "PENDING"
+    );
+
+    for (String status : statusList) {
+
+        long count = 0;
+
+        count += tigoFalseReports.stream()
+                .filter(x -> status.equalsIgnoreCase(x.getStatus()))
+                .mapToLong(OutageReportStatus::getCount)
+                .sum();
+
+        count += tigoTrueReports.stream()
+                .filter(x -> status.equalsIgnoreCase(x.getStatus()))
+                .mapToLong(OutageReportStatus::getCount)
+                .sum();
+
+        OutageReportStatus report = new OutageReportStatus();
+
+        report.setStatus(status);
+        report.setCount(count);
+
+        combinedReports.add(report);
+    }
+
+    return combinedReports;
+}
+
+________
+
