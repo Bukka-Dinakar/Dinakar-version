@@ -1,0 +1,52 @@
+Issue Description
+When an asynchronous outage request is received, a record is created in the Asynchronous Task collection for tracking purposes, with createdDT representing the original request time.
+However, in the OutageCard collection, the createdDT is assigned only after the validation process is completed and the outage card is inserted.
+Currently, outage verification processes outage cards based on sorting by priority, createdDT, and batchCount.
+When multiple asynchronous batches are submitted simultaneously or within milliseconds of each other, their validation completion times may differ. As a result, the createdDT values in the OutageCard collection may not reflect the actual request order.
+This creates a possibility that asynchronous batches may be processed out of their original request sequence, leading to inconsistent verification ordering.
+Proposed Fix
+To ensure asynchronous outage batches are processed in the correct request order, the following changes are required:
+Update createdDT in the OutageCard collection:
+The createdDT should be populated using the corresponding createdDT from the Asynchronous Task collection.
+This ensures that the original request timestamp is preserved across both collections.
+Introduce a new field validationEndDate in the OutageCard collection:
+Add a new date field named validationEndDate.
+This field should capture the timestamp when validation is completed and the outage card is inserted into the OutageCard collection.
+Expected Outcome
+Preserve the original asynchronous request timestamp across both collections.
+Ensure outage verification follows the intended sorting order based on priority, createdDT, and batchCount.
+Prevent incorrect batch ordering caused by differences in validation completion times.
+Maintain separate timestamps for request creation and validation completion, improving traceability and troubleshooting.
+Note: If multiple batches have identical createdDT values, an additional deterministic sorting criterion, such as a task sequence number, may be required to guarantee the exact request order.
+
+
+
+
+_________
+
+1. Task Name
+Preserve Asynchronous Request Order by Updating OutageCard Timestamps
+2. Description
+Currently, the createdDT in the OutageCard collection is assigned when outage validation is completed, rather than when the asynchronous request is received.
+When multiple asynchronous batches are submitted simultaneously or within milliseconds of each other, differences in validation completion times may cause outages to be verified out of their original request order.
+To address this issue, the OutageCard createdDT should be populated from the corresponding Asynchronous Task collection, and a new field, validationEndDate, should be introduced to capture the validation completion timestamp.
+3. Change Description
+Modify the OutageCard creation process to preserve the original asynchronous request timestamp and separately track validation completion time.
+This change ensures consistent verification ordering based on the existing sorting criteria: priority, createdDT, and batchCount.
+4. Change Details
+1. Update createdDT in the OutageCard Collection
+Retrieve createdDT from the corresponding Asynchronous Task record.
+Assign this timestamp to createdDT when creating the OutageCard.
+Ensure the original asynchronous request timestamp is preserved.
+2. Introduce validationEndDate
+Add a new date field named validationEndDate to the OutageCard collection.
+Populate this field with the timestamp when validation is completed and the OutageCard is inserted.
+Keep this timestamp independent of createdDT.
+3. Maintain Verification Sorting
+Retain the existing sorting criteria: priority, createdDT, and batchCount.
+Ensure asynchronous batches are processed according to their original request timestamps, subject to the existing priority-based ordering.
+4. Validation and Testing
+Test multiple asynchronous batches submitted simultaneously or within milliseconds of each other.
+Verify that createdDT matches the corresponding Asynchronous Task timestamp.
+Verify that validationEndDate reflects the validation completion time.
+Confirm that verification follows the expected batch processing order.
