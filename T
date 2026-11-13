@@ -1,0 +1,48 @@
+Task 1: Update Outage Report with TIGO Composite Status
+1. Name
+Add TIGO Composite Status Breakdown to Outage Report
+2. Description
+Enhance the Outage Report by introducing a TIGO Composite Status Breakdown, similar to the existing Equipment Status Breakdown.
+Additionally, include an indicator in the asynchronous Outage Verification report to identify whether TIGO analysis was included or excluded in the verification request.
+3. Change Description
+Update the existing Outage Report to provide a detailed breakdown of TIGO composite statuses and improve visibility into whether TIGO analysis was requested for each asynchronous outage verification request.
+4. Change Details
+Introduce a TIGO Composite Status Breakdown similar to the existing Equipment Status Breakdown.
+Display the following metrics for each TIGO composite status:
+Count
+Minimum execution time
+Maximum execution time
+Mean execution time
+Median execution time
+Add a new TIGO Analyzed column to the asynchronous Outage Verification report.
+Display:
+true – TIGO analysis was included in the verification request.
+false – TIGO analysis was excluded from the verification request.
+Task 2: Update Outage Report with TIGO Analysis Information
+1. Name
+Enhance Outage Verification Status Breakdown with TIGO Analysis Information
+2. Description
+Update the Outage Report to differentiate outage verification statistics based on whether TIGO analysis was performed.
+The report should provide separate status breakdowns for outages with and without TIGO verification while retaining the existing aggregated pie chart.
+3. Change Description
+Enhance the existing Outage Verification Status Breakdown to provide separate execution statistics for TIGO-analyzed and non-TIGO-analyzed outages.
+This will help distinguish the verification performance and status distribution between the two categories.
+4. Change Details
+Split the existing Outage Verification Status Breakdown into two categories:
+TIGO Analyzed = TRUE
+TIGO Analyzed = FALSE
+Display the following metrics separately for both categories:
+Count
+Minimum execution time
+Maximum execution time
+Mean execution time
+Median execution time
+Include the following outage statuses:
+SUCCESS
+FAILED
+QUESTIONABLE
+INVALID
+QUEUED
+PENDING
+Retain the existing pie chart as an aggregated representation of both categories.
+Ensure the existing overall outage statistics remain unchanged.
